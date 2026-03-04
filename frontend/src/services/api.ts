@@ -50,6 +50,14 @@ import type {
   PresetUpdateRequest,
   PresetListResponse,
   ChapterPlanItem,
+  BookImportTask,
+  BookImportPreview,
+  BookImportApplyPayload,
+  BookImportResult,
+  BookImportRetryResult,
+  BatchAnalysisStatusResponse,
+  BatchAnalyzeUnanalyzedRequest,
+  BatchAnalyzeUnanalyzedResponse,
 } from '../types';
 
 interface MCPPluginSimpleCreate {
@@ -364,6 +372,53 @@ export const projectApi = {
   },
 };
 
+export const bookImportApi = {
+  createTask: (params: {
+    file: File;
+  }) => {
+    const formData = new FormData();
+    formData.append('file', params.file);
+
+    return api.post<unknown, { task_id: string; status: BookImportTask['status'] }>(
+      '/book-import/tasks',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+  },
+
+  getTaskStatus: (taskId: string) =>
+    api.get<unknown, BookImportTask>(`/book-import/tasks/${taskId}`),
+
+  getPreview: (taskId: string) =>
+    api.get<unknown, BookImportPreview>(`/book-import/tasks/${taskId}/preview`),
+
+  applyImport: (taskId: string, payload: BookImportApplyPayload) =>
+    api.post<unknown, BookImportResult>(`/book-import/tasks/${taskId}/apply`, payload),
+
+  applyImportStream: (
+    taskId: string,
+    payload: BookImportApplyPayload,
+    options?: SSEClientOptions,
+  ) => ssePost<BookImportResult>(
+    `/api/book-import/tasks/${taskId}/apply-stream`,
+    payload,
+    options,
+  ),
+
+  retryFailedStepsStream: (
+    taskId: string,
+    steps: string[],
+    options?: SSEClientOptions,
+  ) => ssePost<BookImportRetryResult>(
+    `/api/book-import/tasks/${taskId}/retry-stream`,
+    { steps },
+    options,
+  ),
+
+  cancelTask: (taskId: string) =>
+    api.delete<unknown, { success: boolean; message: string }>(`/book-import/tasks/${taskId}`),
+};
+
 export const outlineApi = {
   getOutlines: (projectId: string) =>
     api.get<unknown, { total: number; items: Outline[] }>(`/outlines/project/${projectId}`).then(res => res.items),
@@ -570,6 +625,16 @@ export const chapterApi = {
 
   checkCanGenerate: (chapterId: string) =>
     api.get<unknown, import('../types').ChapterCanGenerateResponse>(`/chapters/${chapterId}/can-generate`),
+
+  getBatchAnalysisStatuses: (projectId: string, chapterIds?: string[]) =>
+    api.post<unknown, BatchAnalysisStatusResponse>(`/chapters/project/${projectId}/analysis/statuses`, {
+      chapter_ids: chapterIds && chapterIds.length > 0 ? chapterIds : undefined,
+    }),
+
+  batchAnalyzeUnanalyzed: (projectId: string, data?: BatchAnalyzeUnanalyzedRequest) =>
+    api.post<unknown, BatchAnalyzeUnanalyzedResponse>(`/chapters/project/${projectId}/analysis/analyze-unanalyzed`, {
+      chapter_ids: data?.chapter_ids && data.chapter_ids.length > 0 ? data.chapter_ids : undefined,
+    }),
 
   // 章节重新生成相关
   getRegenerationTasks: (chapterId: string, limit?: number) =>
