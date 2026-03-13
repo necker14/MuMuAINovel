@@ -220,7 +220,7 @@ async def get_db(request: Request):
             logger.error(f"❌ 关闭会话时出错 [User:{user_id}][ID:{session_id}]: {str(e)}", exc_info=True)
             try:
                 await session.close()
-            except:
+            except Exception:
                 pass
 
 async def init_db(user_id: str = None):

@@ -463,7 +463,7 @@ async def update_character(
         # 解析副职业JSON
         try:
             sub_careers_data = json.loads(sub_careers_json) if isinstance(sub_careers_json, str) else sub_careers_json
-        except:
+        except Exception:
             sub_careers_data = []
         
         # 删除现有的所有副职业关联
@@ -883,7 +883,7 @@ async def generate_character_stream(
                             stage_info = " → ".join(stage_names)
                             if len(stages) > 3:
                                 stage_info += " → ..."
-                        except:
+                        except Exception:
                             stage_info = f"共{career.max_stage}个阶段"
                         
                         careers_info += f"- 名称: {career.name}"

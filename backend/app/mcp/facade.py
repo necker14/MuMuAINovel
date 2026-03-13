@@ -1003,7 +1003,7 @@ class MCPClientFacade:
                 try:
                     content_obj = json.loads(content)
                     content = json.dumps(content_obj, ensure_ascii=False, indent=2)
-                except:
+                except Exception:
                     pass
                 lines.append(f"```json\n{content}\n```\n")
             else:
