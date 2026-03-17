@@ -38,11 +38,24 @@ class CoverSettingsTestRequest(BaseModel):
 
 
 def read_env_defaults() -> Dict[str, Any]:
-    """从.env文件读取默认配置（仅读取，不修改）"""
+    """从.env文件读取默认配置（仅读取，不修改）
+    
+    根据 DEFAULT_AI_PROVIDER 返回对应的 API Key 和 Base URL
+    """
+    provider = app_settings.default_ai_provider
+    
+    # 根据提供商选择对应的配置
+    if provider == "gemini":
+        api_key = app_settings.gemini_api_key or ""
+        api_base_url = app_settings.gemini_base_url or ""
+    else:  # openai (默认)
+        api_key = app_settings.openai_api_key or ""
+        api_base_url = app_settings.openai_base_url or ""
+    
     return {
-        "api_provider": app_settings.default_ai_provider,
-        "api_key": app_settings.openai_api_key or app_settings.anthropic_api_key or "",
-        "api_base_url": app_settings.openai_base_url or app_settings.anthropic_base_url or "",
+        "api_provider": provider,
+        "api_key": api_key,
+        "api_base_url": api_base_url,
         "llm_model": app_settings.default_model,
         "temperature": app_settings.default_temperature,
         "max_tokens": app_settings.default_max_tokens,
