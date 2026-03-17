@@ -107,8 +107,9 @@ class OpenAIClient(BaseAIClient):
                 response.raise_for_status()
                 try:
                     async for line in response.aiter_lines():
-                        if line.startswith("data: "):
-                            data_str = line[6:]
+                        # 兼容 `data:` 和 `data: ` 两种格式
+                        if line.startswith("data:"):
+                            data_str = line[5:].lstrip()
                             if data_str.strip() == "[DONE]":
                                 # 流结束，检查是否有工具调用需要处理
                                 if tool_calls_buffer:
