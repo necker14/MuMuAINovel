@@ -62,7 +62,7 @@ services:
       - "${APP_PORT:-8000}:8000"
     volumes:
       - ./logs:/app/logs
-      - ./storage/generated_covers:/app/backend/storage/generated_covers
+      - ./storage/generated_covers:/app/storage/generated_covers
       - ./.env:/app/.env:ro
     environment:
       # 应用配置

@@ -23,7 +23,7 @@ from app.schemas.settings import (
 from app.user_manager import User
 from app.logger import get_logger
 from app.config import settings as app_settings, PROJECT_ROOT
-from app.services.ai_service import AIService, create_user_ai_service, create_user_ai_service_with_mcp
+from app.services.ai_service import AIService, create_user_ai_service, create_user_ai_service_with_mcp, normalize_provider
 
 logger = get_logger(__name__)
 
@@ -315,6 +315,7 @@ async def get_available_models(
         模型列表
     """
     try:
+        provider = normalize_provider(provider)
         async with httpx.AsyncClient(timeout=10.0) as client:
             if provider == "openai" or provider == "azure" or provider == "custom":
                 # OpenAI 兼容接口获取模型列表
@@ -436,7 +437,7 @@ async def check_function_calling_support(data: ApiTestRequest):
     """
     api_key = data.api_key
     api_base_url = data.api_base_url
-    provider = data.provider
+    provider = normalize_provider(data.provider)
     llm_model = data.llm_model
     
     try:
@@ -652,7 +653,7 @@ async def test_api_connection(data: ApiTestRequest):
     """
     api_key = data.api_key
     api_base_url = data.api_base_url
-    provider = data.provider
+    provider = normalize_provider(data.provider)
     llm_model = data.llm_model
     # 使用前端传递的参数，如果未传递则使用默认值
     temperature = data.temperature if data.temperature is not None else 0.7
@@ -897,7 +898,10 @@ async def create_preset(
         "description": data.description,
         "is_active": False,
         "created_at": datetime.now().isoformat(),
-        "config": data.config.model_dump()
+        "config": {
+            **data.config.model_dump(),
+            "api_provider": normalize_provider(data.config.api_provider)
+        }
     }
     
     presets.append(new_preset)
@@ -947,7 +951,10 @@ async def update_preset(
     if data.description is not None:
         target_preset['description'] = data.description
     if data.config is not None:
-        target_preset['config'] = data.config.model_dump()
+        target_preset['config'] = {
+            **data.config.model_dump(),
+            'api_provider': normalize_provider(data.config.api_provider)
+        }
     
     # 保存回preferences
     prefs['api_presets'] = api_presets
@@ -1033,7 +1040,7 @@ async def activate_preset(
     
     # 应用配置到Settings主字段
     config = target_preset['config']
-    settings.api_provider = config['api_provider']
+    settings.api_provider = normalize_provider(config['api_provider'])
     settings.api_key = config['api_key']
     settings.api_base_url = config.get('api_base_url')
     settings.llm_model = config['llm_model']
@@ -1116,7 +1123,7 @@ async def create_preset_from_current(
     
     # 从当前Settings主字段读取配置
     current_config = APIKeyPresetConfig(
-        api_provider=settings.api_provider,
+        api_provider=normalize_provider(settings.api_provider),
         api_key=settings.api_key,
         api_base_url=settings.api_base_url,
         llm_model=settings.llm_model,

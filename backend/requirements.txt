@@ -36,5 +36,3 @@ sentence-transformers==5.1.2
 
 # PyTorch 版本锁定（用于打包环境）
 torch==2.8.0
-torchvision==0.23.0
-torchaudio==2.8.0
